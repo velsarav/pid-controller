@@ -46,16 +46,15 @@ int main() {
   int p_iterator = 0;
   int total_iterator = 0;
   int sub_move = 0;
-  bool first = true;
-  bool second = true;
+  bool first_level = true;
+  bool second_level = true;
   double best_p[3] = {p[0],p[1],p[2]};
   if(twiddle == true) {
     pid.Init(p[0],p[1],p[2]);
   }else {
     pid.Init(0.06, 0.00031, 1.29);
-    //pid.Init(0.05, 0.0001, 1.5);
   }
-  h.onMessage([&pid, &p, &dp, &n, &max_n, &tol, &error, &best_error, &p_iterator, &total_iterator, &total_cte, &first, &sub_move, &second, &twiddle, &best_p](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  h.onMessage([&pid, &p, &dp, &n, &max_n, &tol, &error, &best_error, &p_iterator, &total_iterator, &total_cte, &first_level, &sub_move, &second_level, &twiddle, &best_p](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -84,46 +83,27 @@ int main() {
             pid.UpdateError(cte);
             steer_value = pid.TotalError();
             
-            // DEBUG
-            //std::cout << "CTE: " << cte << " Steering Value: " << steer_value << " Throttle Value: " << throttle_value << " Count: " << n << std::endl;
             n = n+1;
             if (n > max_n){ 
-              
-              
-              //double sump = p[0]+p[1]+p[2];
-              //std::cout << "sump: " << sump << " ";
-              if(first == true) {
-                std::cout << "Intermediate p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
+              if(first_level == true) {
                 p[p_iterator] += dp[p_iterator];
-                //pid.Init(p[0], p[1], p[2]);
-                first = false;
+                first_level = false;
               }else{
                 error = total_cte/max_n;
                 
-                if(error < best_error && second == true) {
+                if(error < best_error && second_level == true) {
                     best_error = error;
                     best_p[0] = p[0];
                     best_p[1] = p[1];
                     best_p[2] = p[2];
                     dp[p_iterator] *= 1.1;
                     sub_move += 1;
-                    std::cout << "iteration: " << total_iterator << " ";
-                    std::cout << "p_iterator: " << p_iterator << " ";
-                    std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
-                    std::cout << "error: " << error << " ";
-                    std::cout << "best_error: " << best_error << " ";
-                    std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << " " << best_p[1] << " " << best_p[2] << " ";
                 }else{
-                  //std::cout << "else: ";
-                  if(second == true) {
+                  if(second_level == true) {
                     std::cout << "Intermediate p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
                     p[p_iterator] -= 2 * dp[p_iterator];
-                    //pid.Init(p[0], p[1], p[2]);
-                    second = false;
+                    second_level = false;
                   }else {
-                    std::cout << "iteration: " << total_iterator << " ";
-                    std::cout << "p_iterator: " << p_iterator << " ";
-                    std::cout << "p[0] p[1] p[2]: " << p[0] << " " << p[1] << " " << p[2] << " ";
                     if(error < best_error) {
                         best_error = error;
                         best_p[0] = p[0];
@@ -136,9 +116,6 @@ int main() {
                         dp[p_iterator] *= 0.9;
                         sub_move += 1;
                     }
-                    std::cout << "error: " << error << " ";
-                    std::cout << "best_error: " << best_error << " ";
-                    std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << " " << best_p[1] << " " << best_p[2] << " ";
                   }
                 }
                 
@@ -147,8 +124,8 @@ int main() {
 
               if(sub_move > 0) {
                 p_iterator = p_iterator+1;
-                first = true;
-                second = true;
+                first_level = true;
+                second_level = true;
                 sub_move = 0;
               }
               if(p_iterator == 3) {
@@ -160,10 +137,7 @@ int main() {
 
               double sumdp = dp[0]+dp[1]+dp[2];
               if(sumdp < tol) {
-                //pid.Init(p[0], p[1], p[2]);
                 std::cout << "Best p[0] p[1] p[2]: " << best_p[0] << best_p[1] << best_p[2] << " ";
-                //ws.close();
-                //std::cout << "Disconnected" << std::endl;
               } else {
                 std::string reset_msg = "42[\"reset\",{}]";
                 ws.send(reset_msg.data(), reset_msg.length(), uWS::OpCode::TEXT);
