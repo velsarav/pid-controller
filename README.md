@@ -3,96 +3,89 @@
 
 ---
 
+[//]: # (Image References)
+
+[image1]: ./mov/compiler.png "Complie"
+[image2]: ./mov/run.png "run"
+[image3]: ./mov/PID_Controller.png "PID"
+
+
+
+## Project Introduction
+
+A  proportional–integral–derivative controller [PID](https://en.wikipedia.org/wiki/PID_controller) is a control loop feedback mechanism used to control the car in Udacity's [simulator](https://github.com/udacity/self-driving-car-sim/releases/tag/v1.45). The simulator provide cross track error (CTE) and the velocity (mph) in order to compute the appropriate steering angle using [uWebSockets](https://github.com/uWebSockets/uWebSockets). 
+
 ## Dependencies
 
 * cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1(mac, linux), 3.81(Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
+* make >= 4.1
 * gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
 * [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `./install-mac.sh` or `./install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-    Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Simulator. You can download these from the [project intro page](https://github.com/udacity/self-driving-car-sim/releases) in the classroom.
+* For Windows machine [Linux Bash Shell](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/)
+* Udacity simulator
+* Udacity [seed project]https://github.com/udacity/CarND-PID-Control-Project)
 
-Fellow students have put together a guide to Windows set-up for the project [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/files/Kidnapped_Vehicle_Windows_Setup.pdf) if the environment you have set up for the Sensor Fusion projects does not work for this project. There's also an experimental patch for windows in this [PR](https://github.com/udacity/CarND-PID-Control-Project/pull/3).
+---
 
-## Basic Build Instructions
+## Rubric Points
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./pid`. 
+The [rubric](https://review.udacity.com/#!/rubrics/1972/view) points were individually addressed in the [implementation](https://github.com/velsarav/pid-controller)
 
-Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
+### Compilation and connection to the simulator
+The code compiles correctly.
 
-## Editor Settings
+![alt text][image1]
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+The PID controller is running and listening on port 4567.
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+![alt text][image2]
 
-## Code Style
+Start the simulator and select project 4 for PID controller
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+![alt text][image3]
 
-## Project Instructions and Rubric
+---
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+## PID Implementation
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
+### Cross Track Error (CTE)
+A cross track error is a distance of the vehicle from trajectory. In theory it's best suited to control the car by steering in proportion to CTE.
 
-## Hints!
+### P controller
+It sets the steering angle in proportion to CTE. It causes the car to steer proportional (opposite) to the car's distance from the lane center (CTE) - if the car is far to the right it steers to the left. By setting the value to 0 the behavior of the car can be found in the [video](./mov/pValue_0.mp4).
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+```
+pid.Init(0, 0.00031, 1.29);
+```
 
-## Call for IDE Profiles Pull Requests
+### I Controller
 
-Help your fellow students!
+It's the integral or sum of error to deal with systematic biases. The I component particularly serves to reduce the CTE around curves.  The "integral" component counteracts a bias in the CTE which prevents the P-D controller from reaching the center line. By setting the value to 0 the behavior of the car can be found in the[video](./mov/IValue_0.mp4)
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+```
+pid.Init(0.06, 0.00031, 0);
+```
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+### D Controller
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+Helps to take temporal derivative of error. This means when the car turned enough to reduce the error, it will help not to overshoot through the x axis. The "differential", component counteracts the P component’s tendency to ring and overshoot the center line. A properly tuned D parameter will cause the car to approach the center line smoothly without ringing. By setting the value to 0 the behavior of the car can be found in the [video](./mov/DValue_0.mp4)
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+```
+pid.Init(0.06, 0, 1.29);
+```
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+### P, I, D components
+The intial value for Kp, Ki, Kd selected using trail and error method.  First, make sure the car can drive straight with zero as parameters. Then add the proportional and the car start going on following the road but it starts overshooting go out of it. Then add the differential to try to overcome the overshooting. The integral part only moved the car out of the road; so we kept it around zero. The twiddle variable set to true, simulator runs the car with confidents till the maximum steps set initially and go through the twiddle algorithm.
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+```
+pid.Init(0.06, 0.00031, 1.29);
+```
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+### Final result
+Based on the final parameter the car drives properly and the same captured in the [vidoe](./mov/first_video.mp4) 
 
+---
+
+## Reference
+* [Twiddle Algorithm](https://github.com/dkarunakaran/carnd-pid-control-term2-p3)
+* [PID simulation](https://github.com/darienmt/CarND-PID-Control-P4)
